@@ -3,7 +3,7 @@
 using namespace std;
 using ll = long long;
 using C=complex<double>;
-
+using i128=__int128;
 
 const int N=4100001;
 
@@ -11,6 +11,76 @@ double PI=acos(-1);
 int rev[N];
 
 vector<ll> f,g;
+
+ll qpow(ll a,ll b,ll mod){
+    ll ret=1;
+    for(;b;b>>=1,a=a*a%mod)if(b&1)ret=ret*a%mod;
+    return ret;        
+}
+
+struct MINT{
+    const static ll p1=469762049,p2=998244353,p3=1004535809,g1=3,g2=3,g3=3,invg1=156587350,invg2=332748118,invg3=334845270;
+    ll x1,x2,x3;
+    MINT(ll a=0):x1(a%p1),x2(a%p2),x3(a%p3){};
+    MINT(ll a,ll b,ll c):x1(a%p1),x2(b%p2),x3(c%p3){};
+    MINT inv()const{
+        return MINT(qpow(x1,p1-2,p1),qpow(x2,p2-2,p2),qpow(x3,p3-2,p3));
+    }
+    MINT pow(ll b)const{
+        return MINT(qpow(x1,b,p1),qpow(x2,b,p2),qpow(x3,b,p3));
+    }
+    ll CRT(ll p){
+        i128 A=p1,B=p2,C=p3,X1=x1,X2=x2,X3=x3;
+        i128 X4=X1+((X2-X1)%B+B)%B*qpow(A,B-2,B)%B*A;
+        i128 K4=((X3-X4)%C+C)*qpow(A*B%C,C-2,C);
+        return (X4+K4*A*B)%(A*B*C)%p;
+    }
+    static MINT getw(ll n,bool inv=false){
+        return MINT(qpow(inv?invg1:g1,(p1-1)/n,p1),qpow(inv?invg2:g2,(p2-1)/n,p2),qpow(inv?invg3:g3,(p3-1)/n,p3));
+    }
+    MINT operator+(const MINT &a)const{
+        ll y1=x1+a.x1,y2=x2+a.x2,y3=x3+a.x3;
+        if(y1>=p1)y1-=p1;
+        if(y2>=p2)y2-=p2;
+        if(y3>=p3)y3-=p3;
+        return MINT(y1,y2,y3);
+    }
+    MINT operator-(const MINT &a)const{
+        ll y1=x1-a.x1,y2=x2-a.x2,y3=x3-a.x3;
+        if(y1<0)y1+=p1;
+        if(y2<0)y2+=p2;
+        if(y3<0)y3+=p3;
+        return MINT(y1,y2,y3);
+    }
+    MINT operator*(const MINT &a)const{
+        return MINT(x1*a.x1%p1,x2*a.x2%p2,x3*a.x3%p3);
+    }
+    MINT operator/(const MINT &a)const{
+        return *this*a.inv();
+    }
+    MINT operator+=(const MINT &a){
+        return *this=*this+a;
+    }
+    MINT operator-=(const MINT &a){
+        return *this=*this-a;
+    }   
+    MINT operator*=(const MINT &a){
+        return *this=*this*a;
+    }
+    MINT operator/=(const MINT &a){
+        return *this=*this/a;
+    }
+    bool operator==(const MINT &a)const{
+        return x1==a.x1&&x2==a.x2&&x3==a.x3;
+    }
+    bool operator!=(const MINT &a)const{
+        return x1!=a.x1||x2!=a.x2||x3!=a.x3;
+    }
+    MINT operator-()const{
+        return MINT(p1-x1,p2-x2,p3-x3);
+    }
+
+};
 
 struct poly{
     vector<ll> x;
@@ -30,20 +100,37 @@ pair<poly,poly> operator/(poly a,poly b);
 poly operator*(poly a,ll b);
 poly operator*(ll a,poly b);
 
-
-
-ll qpow(ll a,ll b,ll mod){
-    ll ret=1;
-    for(;b;b>>=1,a=a*a%mod)if(b&1)ret=ret*a%mod;
-    return ret;        
-}
-
 namespace POLY{
-    const ll p=998244353,g=3,invg=332748118;
+    ll p=998244353,g=3,invg=332748118;
     vector<ll> vinv;
     void getrev(int s){
         for(int i=0;i<(1<<s);i++){
             rev[i]=((rev[i>>1]>>1)|((i&1)<<(s-1)));
+        }
+    }
+    void mtt(vector<MINT> &a,int s,bool inv){
+        getrev(s);
+        for(int i=0;i<(1<<s);i++){
+            if(i<rev[i])swap(a[i],a[rev[i]]);
+        }
+        for(int h=1;h<=s;h++){
+            int n=1<<h;
+            MINT t=1,w=MINT::getw(n,inv);
+            for(int i=0;i<(1<<s);i+=n){
+                t=1;
+                for(int j=i;j<i+(n>>1);j++){
+                    MINT tmp=t*a[j+(n>>1)];
+                    a[j+(n>>1)]=a[j]-tmp;
+                    a[j]=a[j]+tmp;
+                    t=t*w;
+                }
+            }
+        }
+        if(inv){
+            MINT invs=MINT(1<<s).inv();
+            for(int i=0;i<(1<<s);i++){
+                a[i]=a[i]*invs;
+            }
         }
     }
     void fft(C *a,int s,bool inv){
@@ -135,6 +222,7 @@ namespace POLY{
     }
 };
 poly operator*(const poly &a,const poly &b){
+    //单模
     ll al=a.x.size(),bl=b.x.size(),cl=al+bl-1;
     int s=0;
     while((1<<s)<cl)s++;
@@ -146,6 +234,22 @@ poly operator*(const poly &a,const poly &b){
     POLY::ntt(c.x,s,1);
     c.x.resize(cl);
     return move(c);
+    //任意模数 读到POLY::p
+    // ll al=a.x.size(),bl=b.x.size(),cl=al+bl-1;
+    // vector<MINT> A(a.x.begin(),a.x.end()),B(b.x.begin(),b.x.end()),C(cl);
+    // int s=0;
+    // while((1<<s)<cl)s++;
+    // A.resize(1<<s);
+    // B.resize(1<<s);
+    // C.resize(1<<s);
+    // poly c=poly(vector<ll>(cl));
+    // POLY::mtt(A,s,0);
+    // POLY::mtt(B,s,0);
+    // for(int i=0;i<(1<<s);i++)C[i]=A[i]*B[i];
+    // POLY::mtt(C,s,1);
+    // c.x.resize(cl);
+    // for(int i=0;i<cl;i++)c.x[i]=C[i].CRT(POLY::p);
+    // return move(c);
 }
 poly operator-(const poly &a,const poly &b){
     ll al=a.x.size(),bl=b.x.size(),cl=max(al,bl);
@@ -216,27 +320,13 @@ signed main()
     // cin.tie(0);
     // freopen("aa.in", "r", stdin);
     // freopen("aa.out", "w", stdout);
-    ll n;
-    ll k=0,k1=0;
-    cin>>n;
-    string s;
-    cin>>s;
-    for(auto c:s){
-        k=(k*10%POLY::p+c-'0')%POLY::p;
-        k1=(k1*10%998244352ll+c-'0')%998244352ll;
-    }
-    f.resize(n);
-    int kk=0,ak=0;
-    for(int i=0;i<n;i++){
-        cin>>f[i];
-        if(f[i]>0&&ak==0){
-            kk=i;
-            ak=f[i];
-        }
-    }
-    poly F(f);
-    F=(F<<kk)*qpow(ak,POLY::p-2,POLY::p);
-    auto G=(POLY::exp(k*POLY::ln(F,n),n)*qpow(ak,k1,POLY::p))>>min(kk*k1%998244352ll,n*2ll);
-    for(int i=0;i<n;i++)cout<<G.x[i]<<" ";
+    int n,m;
+    cin>>n>>m>>POLY::p;
+    vector<ll> a(n+1),b(m+1);
+    for(int i=0;i<=n;i++)cin>>a[i];
+    for(int i=0;i<=m;i++)cin>>b[i];
+    poly A(a),B(b);
+    poly c=A*B;
+    for(int i=0;i<=n+m;i++)cout<<c.x[i]<<" ";
     return 0;
 }
