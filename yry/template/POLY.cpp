@@ -93,7 +93,7 @@ struct poly{
         return move(poly(ret));
     }
 };
-poly operator*(const poly &a,const poly &b);
+poly operator*(poly a,poly b);
 poly operator-(const poly &a,const poly &b);
 poly operator+(const poly &a,const poly &b);
 pair<poly,poly> operator/(poly a,poly b);
@@ -101,7 +101,7 @@ poly operator*(poly a,ll b);
 poly operator*(ll a,poly b);
 
 namespace POLY{
-    ll p=998244353,g=3,invg=332748118;
+    const ll p=998244353,g=3,invg=332748118;
     vector<ll> vinv;
     void getrev(int s){
         for(int i=0;i<(1<<s);i++){
@@ -221,35 +221,32 @@ namespace POLY{
         return ret;
     }
 };
-poly operator*(const poly &a,const poly &b){
+poly operator*(poly a,poly b){
     //单模
     ll al=a.x.size(),bl=b.x.size(),cl=al+bl-1;
     int s=0;
     while((1<<s)<cl)s++;
-    auto A=a.resize(1<<s),B=b.resize(1<<s);
-    poly c(vector<ll>(1<<s));
-    POLY::ntt(A.x,s,0);
-    POLY::ntt(B.x,s,0);
-    for(int i=0;i<(1<<s);i++)c.x[i]=A.x[i]*B.x[i]%POLY::p;
-    POLY::ntt(c.x,s,1);
-    c.x.resize(cl);
-    return move(c);
-    //任意模数 读到POLY::p
+    a.x.resize(1<<s,0),b.x.resize(1<<s,0);
+    POLY::ntt(a.x,s,0);
+    POLY::ntt(b.x,s,0);
+    for(int i=0;i<(1<<s);i++)a.x[i]=a.x[i]*b.x[i]%POLY::p;
+    POLY::ntt(a.x,s,1);
+    a.x.resize(cl);
+    return move(a);
+    //任意模数 读到POLY::mp
     // ll al=a.x.size(),bl=b.x.size(),cl=al+bl-1;
-    // vector<MINT> A(a.x.begin(),a.x.end()),B(b.x.begin(),b.x.end()),C(cl);
+    // vector<MINT> A(a.x.begin(),a.x.end()),B(b.x.begin(),b.x.end());
     // int s=0;
     // while((1<<s)<cl)s++;
     // A.resize(1<<s);
     // B.resize(1<<s);
-    // C.resize(1<<s);
-    // poly c=poly(vector<ll>(cl));
     // POLY::mtt(A,s,0);
     // POLY::mtt(B,s,0);
-    // for(int i=0;i<(1<<s);i++)C[i]=A[i]*B[i];
-    // POLY::mtt(C,s,1);
-    // c.x.resize(cl);
-    // for(int i=0;i<cl;i++)c.x[i]=C[i].CRT(POLY::p);
-    // return move(c);
+    // for(int i=0;i<(1<<s);i++)A[i]=A[i]*B[i];
+    // POLY::mtt(A,s,1);
+    // a.x.resize(cl);
+    // for(int i=0;i<cl;i++)a.x[i]=A[i].CRT(POLY::p);
+    // return move(a);
 }
 poly operator-(const poly &a,const poly &b){
     ll al=a.x.size(),bl=b.x.size(),cl=max(al,bl);
@@ -316,17 +313,16 @@ poly operator>>(poly a,int b){
 
 signed main()
 {
-    // ios::sync_with_stdio(false);
-    // cin.tie(0);
+    ios::sync_with_stdio(false);
+    cin.tie(0);
     // freopen("aa.in", "r", stdin);
     // freopen("aa.out", "w", stdout);
     int n,m;
-    cin>>n>>m>>POLY::p;
-    vector<ll> a(n+1),b(m+1);
-    for(int i=0;i<=n;i++)cin>>a[i];
-    for(int i=0;i<=m;i++)cin>>b[i];
-    poly A(a),B(b);
-    poly c=A*B;
-    for(int i=0;i<=n+m;i++)cout<<c.x[i]<<" ";
+    cin>>n;
+    poly f;
+    f.x.resize(n+1);
+    for(int i=0;i<n;i++)cin>>f.x[i];
+    f=POLY::inv(f,n);
+    for(int i=0;i<n;i++)cout<<f.x[i]<<" ";
     return 0;
 }
