@@ -92,6 +92,7 @@ struct poly{
         for(int i=0;i<min(n,(int)x.size());i++)ret[i]=x[i];
         return move(poly(ret));
     }
+    ll& operator[](const int &i){return x[i];}
 };
 poly operator*(poly a,poly b);
 poly operator-(const poly &a,const poly &b);
