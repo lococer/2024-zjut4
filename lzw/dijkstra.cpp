@@ -4,24 +4,29 @@ const int N = 5e5 + 100 ;
 const int MOD = 1000003;
 const int INF = 0x4f4f4f4f;
 int n,m,s,dis[ N ],tot,head[ N ],vis[ N ];
-struct Edge
-{
-    int to,w,next;  
-};
-Edge edge[ N ];
-void add(int u ,int v , int w ){
-    edge[ ++tot ].to = v;
-    edge[ tot ].w = w;
-    edge[ tot ].next = head[ u ];
-    head[ u ] = tot;
-}
+struct gra{
+    struct data{ int to,next,w; };
+    std::vector<int> head;
+    std::vector<data> e;
+    int tot;
+    void ini( int n ){
+        head.clear();e.clear();
+        head.resize(n+1); e.resize(1);
+        tot = 0;
+    }
+    void add_e( int x, int y, int w = 1 ){
+        e.push_back({y,head[x],w});
+        head[x]=++tot;
+    }
+}g;
 void read(){
     std::cin>>n>>m;
+    g.ini( n );
     s=1;
     for( int i = 1 ; i <= m ; i ++ ){
         int u,v,w;std::cin>>u>>v;
-        add(u,v,1);
-        add(v,u,1);
+        g.add_e(u,v,1);
+        g.add_e(v,u,1);
     }
 }
 std::priority_queue< std::pair< int , int > > q;//维护待遍历的节点的最短路径与节点编号
@@ -35,11 +40,11 @@ void solve(){
         int x = q.top().second;
         q.pop();
         vis[ x ] = 1;
-        for( int i = head[ x ] ; i!= 0 ; i = edge[ i ].next ){
-            int y = edge[ i ].to;
+        for( int i = g.head[ x ] ; i ; i = g.e[ i ].next ){
+            int y = g.e[ i ].to;
             if( vis[ y ] ) continue;
-            if( dis[ x ] + edge[ i ].w < dis[ y ] ){
-                dis[ y ] = dis[ x ] + edge[ i ].w;
+            if( dis[ x ] + g.e[ i ].w < dis[ y ] ){
+                dis[ y ] = dis[ x ] + g.e[ i ].w;
                 q.push(std::make_pair( -dis[ y ] , y) );
             }
         }

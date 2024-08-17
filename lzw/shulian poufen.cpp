@@ -6,21 +6,28 @@ typedef long long ll;
 const int N = 1e5 + 100 , M = 1e5 + 100;
 const int INF = 1e9,MOD = 998244353;
 int a[ N ],n,m,r,P;
-struct{
-    int to,next;
-}e[ M << 1 ];
-int head[ N ] , tot = 1 ;
-void add_e( int x , int y ){
-    e[ ++tot ].to = y;
-    e[ tot ].next = head[ x ];
-    head[ x ] = tot;
-}
+struct gra{
+    struct data{ int to,next,w; };
+    std::vector<int> head;
+    std::vector<data> e;
+    int tot;
+    void ini( int n ){
+        head.clear();e.clear();
+        head.resize(n+1); e.resize(1);
+        tot = 0;
+    }
+    void add_e( int x, int y, int w = 1 ){
+        e.push_back({y,head[x],w});
+        head[x]=++tot;
+    }
+}g;
+
 int top[ N ],son[ N ],dfn[ N ],dfncnt,dep[ N ],fa[ N ],siz[ N ],rdfn[ N ];
 void dfs1( int x , int f ){
     siz[ x ] = 1;
     int maxsiz = 0;
-    for( int i = head[ x ] ; i ; i = e[ i ].next ){
-        int y = e[ i ].to;
+    for( int i = g.head[ x ] ; i ; i = g.e[ i ].next ){
+        int y = g.e[ i ].to;
         if( y == f || siz[ y ] ) continue;
         fa[ y ] = x;
         dep[ y ] = dep[ x ] + 1;
@@ -38,8 +45,8 @@ void dfs2( int x , int t ){
     top[ x ] = t;
     if( son[ x ] == 0 ) return;
     dfs2( son[ x ] , t );
-    for( int i = head[ x ] ; i ; i = e[ i ].next ){
-        int y = e[ i ].to;
+    for( int i = g.head[ x ] ; i ; i = g.e[ i ].next ){
+        int y = g.e[ i ].to;
         if( dfn[ y ] || y == son[ x ] ) continue;
         else dfs2( y , y );
     }
@@ -124,11 +131,12 @@ int subtreequery( int x ){
 }
 void solve(){
     std::cin>>n>>m>>r>>P;
+    g.ini( n );
     for( int i = 1 ; i <= n ; i ++ ) std::cin>>a[ i ];
     for( int i = 1 ; i < n ; i ++ ){
         int x , y;std::cin>>x>>y;
-        add_e( x , y );
-        add_e( y , x );
+        g.add_e( x , y );
+        g.add_e( y , x );
     }
     dfs1( r , r );
     dfs2( r , r );

@@ -13,13 +13,28 @@ void add_e( int x , int y ){
     e[ tot ].next = head[ x ];
     head[ x ] = tot;
 }
+struct gra{
+    struct data{ int to,next,w; };
+    std::vector<int> head;
+    std::vector<data> e;
+    int tot;
+    void ini( int n ){
+        head.clear();e.clear();
+        head.resize(n+1); e.resize(1);
+        tot = 0;
+    }
+    void add_e( int x, int y, int w = 1 ){
+        e.push_back({y,head[x],w});
+        head[x]=++tot;
+    }
+}g;
 int fa[ N ][ 31 ];
 int dep[ N ];
 void dfs( int p , int f ){
     fa[ p ][ 0 ] = f;
     dep[ p ] = dep[ f ] + 1;
-    for( int i = head[ p ] ; i ; i = e[ i ].next ){
-        int y = e[ i ].to;
+    for( int i = g.head[ p ] ; i ; i = g.e[ i ].next ){
+        int y = g.e[ i ].to;
         if( y == f ) continue; 
         dfs( y , p );
     }
@@ -40,9 +55,11 @@ int lca( int x , int y ){
 }
 void solve(){
     std::cin>>n>>m>>s;
+    g.ini( n );
     for( int i = 1 ; i <= n - 1 ; i ++ ){
         int x , y;std::cin>>x>>y;
-        add_e( y , x );add_e( x , y );
+        g.add_e( y , x );
+        g.add_e( x , y );
     }
     dep[ s ] = 1;
     dfs( s , 0 );
