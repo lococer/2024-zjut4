@@ -39,3 +39,33 @@ namespace Fastio{
 #define endl '\n' 
 #define cin Fastio::cin
 #define cout Fastio::cout
+
+
+namespace Fread {
+    const int SIZE = 1 << 21;
+    char buf[SIZE], *S, *T;
+    inline char getchar() {
+        if (S == T) {
+            T = (S = buf) + std::fread(buf, 1, SIZE, stdin);
+            if (S == T) return '\n';
+        }
+        return *S++;
+    }
+}
+
+namespace Fwrite {
+    const int SIZE = 1 << 21;
+    char buf[SIZE], *S = buf, *T = buf + SIZE;
+    inline void flush() {
+        std::fwrite(buf, 1, S - buf, stdout);
+        S = buf;
+    }
+    inline void putchar(char c) {
+        *S++ = c;
+        if (S == T) flush();
+    }
+    struct POPOSSIBLE { ~POPOSSIBLE() { flush(); } } ztr;
+}
+
+#define getchar Fread::getchar
+#define putchar Fwrite::putchar

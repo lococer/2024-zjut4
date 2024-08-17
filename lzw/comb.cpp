@@ -1,6 +1,3 @@
-
-// 设置 模数 MOD，初始化为范围
-
 struct COMB{
     std::vector<int> fac,invfac;
     COMB( int n ){
