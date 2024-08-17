@@ -187,7 +187,7 @@ namespace POLY{
     poly inv(const poly &a,int k){
         poly ret(vector<ll>(1,qpow(a.x.front(),p-2,p)));
         for(int i=1;i<k;i<<=1){
-            ret=ret*(2-a.resize(i<<1)*ret);
+            ret=ret*(2 - a.resize(i<<1)*ret);
             ret.x.resize(i<<1);
         }
         ret.x.resize(k);

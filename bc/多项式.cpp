@@ -20,27 +20,62 @@ namespace polynomial {
 
     struct poly {
         vector<tp>x;
-        int sz;
 
-        poly(int n) {//最大第n阶
-            sz = n;
-            x.resize(n + 1);
+        poly(int n = 0) { x.resize(n); };
+
+        poly(const vector<ll>& a) :x(a) {};
+
+        inline int size() const {
+            return x.size();
         }
 
         inline tp& operator[](const int index) {
             return x[index];
         }
 
-        inline void resize(const int sz) {
-            x.resize(sz + 1);
-            this->sz = sz;
+        inline void resize(const int& sz) {
+            x.resize(sz);
+        }
+
+        inline poly operator-() const {
+            poly result(this->x.size());
+            for (tp i = 0; i < result.size(); i++) {
+                result[i] = mod - this->x[i];
+            }
+            return move(result);
+        }
+
+        friend inline poly operator+(const poly& a, const poly& b) {
+            tp sz = max(a.size(), b.size());
+            poly result(sz);
+            for (tp i = 0; i < a.size(); i++) {
+                result[i] += a.x[i];
+            }
+            for (tp i = 0; i < b.size(); i++) {
+                (result[i] += b.x[i]) %= mod;
+            }
+            return move(result);
+        }
+
+        inline poly& operator+=(const poly& other) {
+            (*this) = (*this) * other;
+            return *this;
+        }
+
+        friend inline poly operator-(const poly& a, const poly& b) {
+            return move(a + (-b));
+        }
+
+        inline poly& operator-=(const poly& other) {
+            (*this) = (*this) - other;
+            return *this;
         }
 
         friend inline poly operator*(poly a, poly b) {
-            tp sz = a.sz + b.sz;
+            tp sz = a.size() + b.size() - 1;
             tp tmp = max((tp)1, sz);
             tp lim = 1;
-            while (lim < (tmp + 1)) lim <<= 1;
+            while (lim < tmp) lim <<= 1;
             a.resize(lim);
             b.resize(lim);
             poly result(lim);
@@ -52,32 +87,33 @@ namespace polynomial {
             return result;
         }
 
-        inline poly& operator*=(poly other) {
-            tp sz = this->sz + other.sz;
-            tp tmp = max((tp)1, sz);
-            tp lim = 1;
-            while (lim < (tmp + 1)) lim <<= 1;
-            this->resize(lim);
-            other.resize(lim);
-            ntt((*this), lim, 1);
-            ntt(other, lim, 1);
-            for (tp i = 0; i < lim; ++i) (*this)[i] = 1ll * (*this)[i] * other[i] % mod;
-            ntt((*this), lim, 0);
-            this->resize(sz);
-            return (*this);
+        inline poly& operator*=(const poly& other) {
+            (*this) = (*this) * other;
+            return *this;
+        }
+
+        poly inv() {
+            tp k = this->size();
+            poly ret(vector<ll>(1, ksm((*this)[0], mod - 2, mod)));
+            for (tp i = 1; i < k; i <<= 1) {
+                ret *= (poly(vector<tp>(1, 2)) - (*this) * ret);
+                ret.resize(i << 1);
+            }
+            ret.resize(k);
+            return ret;
         }
 
     };
 
-    void ntt_init(int n) {//处理的最大阶
+    void ntt_init(int n) {//处理的最大项数
         n = max(1, n);
         tp lim = 1;
         tp cnt = 0;
-        while (lim < (n + 1)) lim <<= 1, cnt++;
+        while (lim < n) lim <<= 1, cnt++;
         r.resize(cnt + 1);
         lim = 1;
         cnt = 0;
-        while (lim < (n + 1)) {
+        while (lim < n) {
             lim <<= 1;
             cnt++;
             lim_mp[lim] = cnt;
