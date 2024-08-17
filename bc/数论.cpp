@@ -23,6 +23,10 @@ namespace my_math {
         return lsans;
     }
 
+    inline tp inv(tp a, tp p) {
+        return ksm(a, p - 2, p);
+    }
+
     void prime_init(tp n, vector<tp>& prime) {
         vector<tp>not_prime(n + 5);
         for (int i = 2; i <= n; ++i) {
