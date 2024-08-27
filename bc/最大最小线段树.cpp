@@ -142,5 +142,4 @@ struct segment_tree {
 		}
 		return find_from_lt(lt, rt, c, tree[p].rc);
 	}
-
 };
