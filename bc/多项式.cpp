@@ -21,17 +21,27 @@ namespace polynomial {
     struct poly {
         vector<tp>x;
 
+        inline tp& operator[](const int& index) {
+            return x[index];
+        }
+
         poly(int n = 0) { x.resize(n); };
 
         poly(const vector<ll>& a) :x(a) {};
+
+        poly(const poly& a, int sz) {
+            sz = min(sz, a.size());
+            x.resize(sz);
+            for (tp i = 0; i < sz; i++) {
+                x[i] = a.x[i];
+            }
+        }
 
         inline int size() const {
             return x.size();
         }
 
-        inline tp& operator[](const int index) {
-            return x[index];
-        }
+
 
         inline void resize(const int& sz) {
             x.resize(sz);
@@ -96,7 +106,7 @@ namespace polynomial {
             tp k = this->size();
             poly ret(vector<ll>(1, ksm((*this)[0], mod - 2, mod)));
             for (tp i = 1; i < k; i <<= 1) {
-                ret *= (poly(vector<tp>(1, 2)) - (*this) * ret);
+                ret *= (poly(vector<tp>(1, 2)) - poly(*this, i << 1) * ret);
                 ret.resize(i << 1);
             }
             ret.resize(k);
