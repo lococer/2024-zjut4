@@ -11,6 +11,12 @@ namespace my_math {
         return a;
     }
 
+    inline tp exgcd(const tp a, const tp b, tp& x, tp& y) {
+        if (b == 0) return x = 1, y = 0, a;
+        tp d = exgcd(b, a % b, y, x);
+        y -= a / b * x; return d;
+    }
+
     tp ksm(tp a, tp b, tp p) {
         tp lsans = 1;
         while (b) {
@@ -25,6 +31,28 @@ namespace my_math {
 
     inline tp inv(tp a, tp p) {
         return ksm(a, p - 2, p);
+    }
+
+    inline tp mul(tp a, tp b, const tp MOD) {
+        tp Ret = 0;
+        while (b) {
+            if (b & 1) Ret = (Ret + a) % MOD;
+            a = (a + a) % MOD, b >>= 1;
+        }
+        return Ret;
+    }
+
+    inline tp excrt(vector<tp>& p, vector<tp>& r, const int n) {
+        tp m = 1, t = 0, k = 0, s = 0, x, y, ap = p[1], ar = r[1];
+
+        for (int i = 2; i <= n; ++i) {
+            t = exgcd(ap, p[i], x, y), s = ((r[i] - ar) % p[i] + p[i]) % p[i];
+            if (s % t) return -1;
+            m = s / t, k = p[i] / t, x = mul(x, m, k), y = mul(y, m, k);
+            ar = ((ar + x * ap) % (ap * k) + ap * k) % (ap * k), ap = ap * k;
+        }
+
+        return (ar % ap + ap) % ap;
     }
 
     void prime_init(tp n, vector<tp>& prime) {
