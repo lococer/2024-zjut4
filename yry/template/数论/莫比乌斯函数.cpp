@@ -7,10 +7,6 @@ const int maxn=1000005;
 int n,p[maxn+100],u[maxn+100],tot;
 bool vis[maxn+100];
 
-/*
-对于m=p[j]*i,p[j]是m的最小质因子
-如果i含p[j]，说明指数大于一，为0，否则m比i多出一个因子，取负
-*/
 void getu(){
     u[1]=1;
     for(int i=2;i<maxn;i++){
