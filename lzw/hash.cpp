@@ -4,12 +4,11 @@ typedef long long ll;
 #define lp (p<<1)
 #define rp (p<<1|1)
 const int N = 2e5 + 100 , M = 2e5 + 100;
-const int INF = 1e9,MOD = 998244353;
+const int INF = 1e9,MOD = 998244353 , P = 333337;
 int n;
 
-// 初始化的 s 下标从1开始
 struct HASH{
-    const int P1 = 13333337, P2 = 1337, MOD = 998244353;
+    const int P1 = 13333337, P2 = 1337;
     std::vector<int> has1, bas1, has2, bas2;
     HASH(std::string s){
         int len = s.size() - 1;

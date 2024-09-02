@@ -3,16 +3,23 @@ typedef long long ll;
 const int N = 5e2 + 100 , M = 6e3 + 100;
 const int MOD = 100003;
 const int INF = 1e9;
-struct{
-    int to,w,next;
-}e[ M ];
-int head[ N ],tot;int n,m,w;
-void add_e( int x , int y , int c ){
-    e[ ++tot ].to = y;
-    e[ tot ].w = c;
-    e[ tot ].next = head[ x ];
-    head[ x ] = tot;
-}   
+struct gra{
+    struct data{ int to,next,w; };
+    std::vector<int> head;
+    std::vector<data> e;
+    int tot;
+    void ini( int n ){
+        head.clear();e.clear();
+        head.resize(n+1); e.resize(1);
+        tot = 0;
+    }
+    void add_e( int x, int y, int w = 1 ){
+        e.push_back({y,head[x],w});
+        head[x]=++tot;
+    }
+}g;
+
+int n,m;
 int vis[ N ],dis[ N ],cnt[ N ];
 bool spfa(){
     memset( vis , 0 , sizeof( vis ) );
@@ -26,10 +33,10 @@ bool spfa(){
         int x = q.front();
         q.pop();
         vis[ x ] = 0;
-        for( int i = head[ x ] ; i != 0 ; i = e[ i ].next ){
-            int y = e[ i ].to;
-            if( dis[ x ] + e[ i ].w < dis[ y ] ){
-                dis[ y ] = dis[ x ] + e[ i ].w;
+        for( int i = g.head[ x ] ; i != 0 ; i = g.e[ i ].next ){
+            int y = g.e[ i ].to;
+            if( dis[ x ] + g.e[ i ].w < dis[ y ] ){
+                dis[ y ] = dis[ x ] + g.e[ i ].w;
                 if( !vis[ y ] ){
                     vis[ y ] = 1;
                     cnt[ y ] ++;
@@ -42,13 +49,11 @@ bool spfa(){
     return false;
 }
 void solve(){
-    tot=0;
-    memset( head , 0 , sizeof( head ) );
-    memset( e , 0 , sizeof( e ) );
     std::cin>>n>>m;
+    g.ini( n );
     for( int i = 1 ; i <= m; i ++ ){
         int x,y,c;std::cin>>x>>y>>c;
-            add_e( x , y , c ); //有向图
+            g.add_e( x , y , c ); //有向图
             // add_e( y , x , c ); // 无向图
     }
 
