@@ -221,6 +221,43 @@ namespace POLY{
         ret.x.resize(k);
         return ret;
     }
+    vector<poly> Q;
+    poly MulT(poly a,poly b){
+        int n=a.x.size(),m=b.x.size();
+        reverse(b.x.begin(),b.x.end());
+        b=a*b;
+        for(int i=0;i<n;++i) a[i]=b[i+m-1];
+        return a;
+    }
+    void MPinit(poly &a,int u,int cl,int cr){
+        if(cl==cr){
+            Q[u].x.resize(2);
+            Q[u][0]=1,Q[u][1]=POLY::p-a[cl];
+            return;
+        }
+        int mid=cl+cr>>1;
+        MPinit(a,u<<1,cl,mid);MPinit(a,u<<1|1,mid+1,cr);
+        Q[u]=Q[u<<1]*Q[u<<1|1];
+    }
+    void MPcal(int u,int cl,int cr,poly f,poly &g){
+        f.x.resize(cr-cl+1);
+        if(cl==cr){
+            g[cl]=f[0];
+            return;
+        }
+        int mid=cl+cr>>1;
+        MPcal(u<<1,cl,mid,MulT(f,Q[u<<1|1]),g);
+        MPcal(u<<1|1,mid+1,cr,MulT(f,Q[u<<1]),g);
+    }
+    poly Multipoints(poly f,poly a,int n){
+        f.x.resize(n+1),a.x.resize(n);
+        poly v;
+        v.x.resize(n);
+        Q.resize(n<<2);
+        MPinit(a,1,0,n-1);
+        MPcal(1,0,n-1,MulT(f,POLY::inv(Q[1],n+1)),v);
+        return v;
+    }
 };
 poly operator*(poly a,poly b){
     //单模
@@ -312,6 +349,8 @@ poly operator>>(poly a,int b){
     return move(c);
 }
 
+
+
 signed main()
 {
     ios::sync_with_stdio(false);
@@ -319,11 +358,13 @@ signed main()
     // freopen("aa.in", "r", stdin);
     // freopen("aa.out", "w", stdout);
     int n,m;
-    cin>>n;
-    poly f;
-    f.x.resize(n+1);
-    for(int i=0;i<n;i++)cin>>f.x[i];
-    f=POLY::inv(f,n);
-    for(int i=0;i<n;i++)cout<<f.x[i]<<" ";
+    cin>>n>>m;
+    ++n;
+    poly x,y;
+    x.x.resize(n);y.x.resize(m);
+    for(int i=0;i<n;++i) cin>>x[i];
+    for(int i=0;i<m;++i) cin>>y[i];
+    auto res=POLY::Multipoints(x,y,max(n,m));
+    for(int i=0;i<m;++i) cout<<res[i]<<"\n";
     return 0;
 }
