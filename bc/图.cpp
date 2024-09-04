@@ -2,18 +2,22 @@ struct chain_forward_star {
 	vector<int>head;
 	vector<int>vis;
 	vector<int>nxt, to;
-	vector<int>sz;//树，每棵子树大小
-	vector<int>dep;//树，树深
-	vector<int>son;//树，重儿子
-	vector<int>fa;//树，父亲
+	vector<tp>val;//图,边权
+	vector<tp>dis;//图,距离
+	vector<int>sz;//树,每棵子树大小
+	vector<int>dep;//树,树深
+	vector<int>son;//树,重儿子
+	vector<int>fa;//树,父亲
 	vector<int>link_top;//树,链顶
-	vector<pii>dfn;//dfs序，先序遍历，可以用作
+	vector<pii>dfn;//dfs序,先序遍历,可以用作
+	tp inf = 1e9;
 	chain_forward_star(tp n = 0) {
 		init(n);
 	}
 
 	void init(tp n) {
 		head = vector<int>(n, -1);
+		dis = vector<tp>(n);
 		vis = sz = dep = son = fa = link_top = vector<int>(n);
 		dfn = vector<pii>(n);
 		nxt.clear();
@@ -24,6 +28,7 @@ struct chain_forward_star {
 		nxt.push_back(head[u]);
 		head[u] = to.size();
 		to.push_back(v);
+		val.push_back(1);//默认边权为1
 	}
 
 	void addedge(int u, int v) {
@@ -87,6 +92,27 @@ struct chain_forward_star {
 		}
 		dfn[u].second = num;
 		return (dfn[u].second - dfn[u].first + 1);
+	}
+
+	void dijkstra(int s) {
+		dis = vector<tp>(dis.size(), inf);
+		vis = vector<int>(vis.size());
+		dis[s] = 0;
+		priority_queue<ptp, vector<ptp>, greater<ptp>>q;
+		q.push({ 0,s });
+		while (!q.empty()) {
+			int u = q.top().second;
+			q.pop();
+			if (vis[u]) continue;
+			vis[u] = 1;
+			for (int i = head[u]; ~i; i = nxt[i]) {
+				int v = to[i], w = val[i];
+				if (dis[v] > dis[u] + w) {
+					dis[v] = dis[u] + w;
+					q.push({ dis[v], v });
+				}
+			}
+		}
 	}
 
 };
