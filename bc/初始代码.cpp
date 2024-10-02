@@ -15,7 +15,7 @@ tp lt, rt, mid;
 tp min1, min2, min3, max1, max2, max3;
 string s;
 tp h, w, t;
-tp a[100005];
+vector<tp>a;
 
 void init() {
 
