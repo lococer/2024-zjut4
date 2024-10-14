@@ -8,6 +8,8 @@ struct chain_forward_star {
 	vector<int>dep;//树,树深
 	vector<int>son;//树,重儿子
 	vector<int>fa;//树,父亲
+	vector<vector<int>>mul_fa;//树，倍增父亲
+	int logn;
 	vector<int>link_top;//树,链顶
 	vector<pii>dfn;//dfs序,先序遍历,可以用作
 	tp inf = 1e9;
@@ -22,6 +24,11 @@ struct chain_forward_star {
 		dfn = vector<pii>(n);
 		nxt.clear();
 		to.clear();
+		logn = 0;
+		while ((1 << logn) <= n) {
+			++logn;
+		}
+		mul_fa = vector<vector<int>>(n, vector<int>(logn));
 	}
 
 	void add(int u, int v) {
@@ -113,6 +120,33 @@ struct chain_forward_star {
 				}
 			}
 		}
+	}
+
+	void multiply_dfs(int u, int last) {
+		// 初始化：第 2^0 = 1 个祖先就是它的父亲节点，dep 也比父亲节点多 1。
+		mul_fa[u][0] = last;
+		// 初始化：其他的祖先节点：第 2^i 的祖先节点是第 2^(i-1) 的祖先节点的第
+		// 2^(i-1) 的祖先节点。
+		for (int i = 1; i < logn; ++i) {
+			mul_fa[u][i] = mul_fa[mul_fa[u][i - 1]][i - 1];
+		}
+		// 遍历子节点来进行 dfs。
+		for (int i = head[u]; ~i; i = nxt[i]) {
+			int v = to[i];
+			if (v != last) {
+				multiply_dfs(v, u);
+			}
+		}
+	}
+
+	int find_fa(int u, int dis) {//找距离u为dis的祖父节点
+		for (int i = 0; i < logn; i++) {
+			if (dis & 1ll) {
+				u = mul_fa[u][i];
+			}
+			dis >>= 1;
+		}
+		return u;
 	}
 
 };

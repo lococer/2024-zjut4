@@ -3,12 +3,13 @@ struct disjoint_set {
     vector<int>father;
 
     disjoint_set(const int& n) {
-        father = vector<int>(n + 5);
+        init(n);
     }
 
     void init(const int& n) {
         this->n = n;
-        for (int i = 0; i <= n; i++) {
+        father = vector<int>(n);
+        for (int i = 0; i < n; i++) {
             father[i] = i;
         }
     }

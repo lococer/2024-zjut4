@@ -41,8 +41,6 @@ namespace polynomial {
             return x.size();
         }
 
-
-
         inline void resize(const int& sz) {
             x.resize(sz);
         }
@@ -84,7 +82,7 @@ namespace polynomial {
         friend inline poly operator*(poly a, poly b) {
             tp sz = a.size() + b.size() - 1;
             tp tmp = max((tp)1, sz);
-            tp lim = 1;
+            tp lim = 2;
             while (lim < tmp) lim <<= 1;
             a.resize(lim);
             b.resize(lim);
@@ -156,6 +154,14 @@ namespace polynomial {
             int inv = ksm(lim, mod - 2, mod);
             for (tp i = 0; i < lim; ++i) x[i] = 1ll * x[i] * inv % mod;
         }
+    }
+
+    poly dsu_mul(vector<poly>& v, tp s, tp t) {
+        if (s == t) {
+            return v[s];
+        }
+        tp m = s + ((t - s) >> 1);
+        return dsu_mul(v, s, m) * dsu_mul(v, m + 1, t);
     }
 
 }
