@@ -1,5 +1,5 @@
 namespace polynomial {
-    ll mod = 998244353;
+    const ll mod = 998244353ll;
     ll ksm(ll a, ll b, const ll p) {
         a %= p;
         ll lsans = 1;
@@ -49,7 +49,7 @@ namespace polynomial {
             x.resize(n);
         }
 
-        poly_Int(poly& a);
+        poly_Int(const poly& a);
 
         inline Int& operator[](const int index) {
             return x[index];
@@ -144,6 +144,14 @@ namespace polynomial {
             for (tp i = 0; i < b.size(); i++) {
                 (result[i] += b.x[i]) %= mod;
             }
+            if (a.size() == b.size()) {
+                for (sz = a.size(); sz > 0; sz--) {
+                    if (result[sz - 1]) {
+                        break;
+                    }
+                }
+                result.resize(sz);
+            }
             return move(result);
         }
 
@@ -175,7 +183,7 @@ namespace polynomial {
                 for (tp i = 0; i < lim; ++i) result[i] = 1ll * a[i] * b[i] % mod;
                 ntt(result, lim, 0);
                 result.resize(sz);
-                return result;
+                return move(result);
             }
             else {
                 poly_Int Inta(a), Intb(b);
@@ -188,7 +196,7 @@ namespace polynomial {
                 ntt(Intresult, lim, 0);
                 Intresult.resize(sz);
                 poly result(Intresult);
-                return result;
+                return move(result);
             }
         }
 
@@ -196,6 +204,37 @@ namespace polynomial {
             (*this) = (*this) * other;
             return *this;
         }
+
+        friend inline poly operator/(poly a, poly b) {
+            if (a.size() < b.size()) {
+                return poly(1);
+            }
+            reverse(a.x.begin(), a.x.end());
+            reverse(b.x.begin(), b.x.end());
+            poly c = a * b.inv(a.size() - b.size() + 1);
+            c.resize(a.size() - b.size() + 1);
+            reverse(c.x.begin(), c.x.end());
+            return move(c);
+        }
+
+        inline poly& operator/=(const poly& other) {
+            (*this) = (*this) / other;
+            return *this;
+        }
+
+        friend inline poly operator%(poly a, poly b) {
+            if (a.size() < b.size()) {
+                return move(a);
+            }
+            poly r = a - (a / b) * b;
+            return move(r);
+        }
+
+        inline poly& operator%=(const poly& other) {
+            (*this) = (*this) % other;
+            return *this;
+        }
+
 
         friend void ntt(poly& x, tp lim, tp opt) {
             tp k, gn, g, tmp;
@@ -224,8 +263,10 @@ namespace polynomial {
             }
         }
 
-        poly inv() {
-            tp k = this->size();
+        poly inv(int k = 0) {
+            if (k == 0) {
+                k = this->size();
+            }
             poly ret(vector<ll>(1, ksm((*this)[0], mod - 2, mod)));
             for (tp i = 1; i < k; i <<= 1) {
                 ret *= (poly(vector<tp>(1, 2)) - poly(*this, i << 1) * ret);
@@ -245,10 +286,10 @@ namespace polynomial {
         }
     }
 
-    poly_Int::poly_Int(poly& a) {
+    poly_Int::poly_Int(const poly& a) {
         x.resize(a.size());
         for (tp i = 0; i < x.size(); ++i) {
-            x[i] = (Int)a[i];
+            x[i] = (Int)a.x[i];
         }
     }
     //以上为任意模数部分
@@ -261,7 +302,5 @@ namespace polynomial {
         tp m = s + ((t - s) >> 1);
         return dsu_mul(v, s, m) * dsu_mul(v, m + 1, t);
     }
-
-
 
 }
