@@ -71,6 +71,14 @@ namespace my_math {
         }
     }
 
+    void inv_init(tp n, vector<tp>& inv, tp p) {
+        inv = vector<tp>(n + 5);
+        inv[1] = 1;
+        for (tp i = 2; i <= n; ++i) {
+            inv[i] = (p - p / i) * inv[p % i] % p;
+        }
+    }
+
     inline tp qm(tp x, tp y) {//导入的x要控制在(-y,y)之间，根据位数改位移，int为31,ll为63
         return x + (x >> 63 & y);
     }
