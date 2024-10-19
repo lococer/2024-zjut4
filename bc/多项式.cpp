@@ -55,8 +55,9 @@ namespace polynomial {
             return x[index];
         }
 
-        inline void resize(const int sz) {
+        inline poly_Int& resize(const int sz) {
             x.resize(sz);
+            return *this;
         }
 
         inline int size() const {
@@ -123,8 +124,9 @@ namespace polynomial {
             return x.size();
         }
 
-        inline void resize(const int& sz) {
+        inline poly& resize(const int& sz) {
             x.resize(sz);
+            return *this;
         }
 
         inline poly operator-() const {
@@ -156,7 +158,7 @@ namespace polynomial {
         }
 
         inline poly& operator+=(const poly& other) {
-            (*this) = (*this) * other;
+            (*this) = (*this) + other;
             return *this;
         }
 
@@ -263,17 +265,70 @@ namespace polynomial {
             }
         }
 
-        poly inv(int k = 0) {
-            if (k == 0) {
-                k = this->size();
+        poly inv(int n = 0) {//n代表模x的n次意义下
+            if (n == 0) {
+                n = this->size();
             }
             poly ret(vector<ll>(1, ksm((*this)[0], mod - 2, mod)));
-            for (tp i = 1; i < k; i <<= 1) {
+            for (tp i = 1; i < n; i <<= 1) {
                 ret *= (poly(vector<tp>(1, 2)) - poly(*this, i << 1) * ret);
                 ret.resize(i << 1);
             }
-            ret.resize(k);
+            ret.resize(n);
             return ret;
+        }
+
+        poly sqrt(int n = 0) {//n代表模x的n次意义下
+            if (n == 0) {
+                n = this->size();
+            }
+            if (n == 1) {
+                return move(poly(vector<tp>(1, 1)));
+            }
+            poly f = sqrt((n + 1) >> 1);
+            f += (f.inv(n) * poly(*this, n)).resize(n);
+            tp inv2 = polynomial::inv(2, mod);
+            for (tp i = 0; i < f.size(); i++) {
+                (f[i] *= inv2) %= mod;
+            }
+            return move(f);
+
+        }
+
+        poly deriv() {
+            poly ret(this->size() - 1);
+            for (tp i = 0; i < ret.size(); i++) {
+                ret[i] = (*this)[i + 1] * (i + 1) % mod;
+            }
+            return move(ret);
+        }
+
+        poly integ() {
+            poly ret(this->size() + 1);
+            for (tp i = 1; i < ret.size(); i++) {
+                ret[i] = (*this)[i - 1] * polynomial::inv(i, mod) % mod;
+            }
+            return move(ret);
+        }
+
+        poly ln(int n = 0) {//要求a0==1
+            if (n == 0) {
+                n = this->size();
+            }
+            return (((deriv() * inv(n)).resize(n)).integ()).resize(n);
+        }
+
+        poly exp(int n = 0) {
+            if (n == 0) {
+                n = this->size();
+            }
+            poly one(vector<tp>(1, 1));
+            poly ret = one;
+            for (tp i = 1; i < n; i <<= 1) {
+                (ret *= (one + poly(*this, i << 1) - ret.ln(i << 1))).resize(i << 1);
+            }
+            ret.resize(n);
+            return move(ret);
         }
 
     };
