@@ -237,7 +237,6 @@ namespace polynomial {
             return *this;
         }
 
-
         friend void ntt(poly& x, tp lim, tp opt) {
             tp k, gn, g, tmp;
             vector<tp>r(lim);
@@ -356,6 +355,26 @@ namespace polynomial {
         }
         tp m = s + ((t - s) >> 1);
         return dsu_mul(v, s, m) * dsu_mul(v, m + 1, t);
+    }
+
+    //特殊快速幂，复杂度o(nk),k为a的项数
+    poly special_ksm(poly a, tp b) {//b为幂次
+        vector<tp>inv((a.size() - 1) * b + 1);
+        poly ans(inv);
+        inv[1] = 1;
+        for (tp i = 2; i < inv.size(); ++i) {
+            inv[i] = (mod - mod / i) * inv[mod % i] % mod;
+        }
+        tp inv_a0 = polynomial::inv(a[0], mod);
+        ans[0] = ksm(a[0], b, mod);
+        for (tp k = 1; k < ans.size(); ++k) {
+            tp n = min(k, (tp)a.size() - 1);
+            for (tp i = 1; i <= n; ++i) {
+                ans[k] = (ans[k] + a[i] * ans[k - i] % mod * (((b + 1) * i - k + mod) % mod) % mod) % mod;
+            }
+            ans[k] = ans[k] * inv[k] % mod * inv_a0 % mod;
+        }
+        return move(ans);
     }
 
 }
