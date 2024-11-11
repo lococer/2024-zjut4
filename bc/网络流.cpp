@@ -74,6 +74,7 @@ struct internet_flow {
 
 	bool spfa(tp s, tp t) {
 		dis = vector<tp>(dis.size(), inf);
+		cur = head;
 		queue<tp> q;
 		q.push(s), dis[s] = 0, mf[s] = inf, mf[t] = 0;
 		while (!q.empty()) {
@@ -104,6 +105,32 @@ struct internet_flow {
 				val[i] -= mf[t];
 				val[i ^ 1] += mf[t];
 				ret += mf[t] * cost[i];
+			}
+		}
+		return ans;
+	}
+
+	tp dfs_cost(tp u, tp t, tp flow) {
+		if (u == t) return flow;
+		vis[u] = true;
+		tp ans = 0;
+		for (tp& i = cur[u]; i && ans < flow; i = nxt[i]) {
+			tp v = to[i];
+			if (!vis[v] && val[i] && dis[v] == dis[u] + cost[i]) {
+				int x = dfs_cost(v, t, min(val[i], flow - ans));
+				if (x) ret += x * cost[i], val[i] -= x, val[i ^ 1] += x, ans += x;
+			}
+		}
+		vis[u] = false;
+		return ans;
+	}
+
+	int mcmf(int s, int t) {
+		int ans = 0;
+		while (spfa(s, t)) {
+			int x;
+			while ((x = dfs_cost(s, t, inf))) {
+				ans += x;
 			}
 		}
 		return ans;
