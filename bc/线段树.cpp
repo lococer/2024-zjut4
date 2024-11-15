@@ -17,7 +17,7 @@ struct segment_tree {
 		tot = 0;
 	}
 
-	void build(tp s, tp t, tp& p, tp ori[]) {
+	void build(tp s, tp t, tp& p, vector<tp>& ori) {
 		p = ++tot;
 		tree[p].lr = s;
 		tree[p].rr = t;

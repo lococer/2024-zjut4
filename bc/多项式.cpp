@@ -1,7 +1,5 @@
 namespace polynomial {
-    vector<vector<tp> >r;
-    const ll mod = 998244353;
-    umap<int, int>lim_mp;
+    const ll mod = 998244353ll;
     ll ksm(ll a, ll b, const ll p) {
         a %= p;
         ll lsans = 1;
@@ -14,9 +12,91 @@ namespace polynomial {
         }
         return lsans;
     }
-
     struct poly;
-    void ntt(poly& x, tp lim, tp opt);
+    struct poly_Int;
+
+    //以下为任意模数部分
+
+    ll inv(ll x, ll mod) { return ksm(x, mod - 2, mod); }
+    const ll mod1 = 998244353, mod2 = 1004535809, mod3 = 469762049, G = 3;
+    const ll mod_1_2 = static_cast<ll> (mod1) * mod2;
+    const ll inv_1 = inv(mod1, mod2), inv_2 = inv(mod_1_2 % mod3, mod3);
+    struct Int {
+        ll A, B, C;
+        explicit Int(ll __num = 0) : A(__num% mod1), B(__num% mod2), C(__num% mod3) {}
+        explicit Int(ll __A, ll __B, ll __C) : A(__A% mod1), B(__B% mod2), C(__C% mod3) {}
+        static Int reduce(const Int& x) {
+            return Int(x.A + (x.A >> 31 & mod1), x.B + (x.B >> 31 & mod2), x.C + (x.C >> 31 & mod3));
+        }
+        friend Int operator + (const Int& lhs, const Int& rhs) {
+            return reduce(Int(lhs.A + rhs.A - mod1, lhs.B + rhs.B - mod2, lhs.C + rhs.C - mod3));
+        }
+        friend Int operator - (const Int& lhs, const Int& rhs) {
+            return reduce(Int(lhs.A - rhs.A, lhs.B - rhs.B, lhs.C - rhs.C));
+        }
+        friend Int operator * (const Int& lhs, const Int& rhs) {
+            return Int(static_cast<ll> (lhs.A) * rhs.A % mod1, static_cast<ll> (lhs.B) * rhs.B % mod2, static_cast<ll> (lhs.C) * rhs.C % mod3);
+        }
+        tp get() {
+            ll x = static_cast<ll> (B - A + mod2) % mod2 * inv_1 % mod2 * mod1 + A;
+            return (static_cast<ll> (C - x % mod3 + mod3) % mod3 * inv_2 % mod3 * (mod_1_2 % mod) % mod + x) % mod;
+        }
+    };
+    struct poly_Int {
+        vector<Int>x;
+
+        poly_Int(int n) {
+            x.resize(n);
+        }
+
+        poly_Int(const poly& a);
+
+        inline Int& operator[](const int index) {
+            return x[index];
+        }
+
+        inline poly_Int& resize(const int sz) {
+            x.resize(sz);
+            return *this;
+        }
+
+        inline int size() const {
+            return x.size();
+        }
+
+        friend void ntt(poly_Int& x, tp lim, const tp op) {
+            tp s = 0;
+            while ((1ll << (s + 1)) < lim) {
+                ++s;
+            }
+            vector<tp>rev(lim + 1);
+            vector<Int>Wn(lim + 1);
+            for (register tp i = 1; i < lim; ++i) rev[i] = rev[i >> 1] >> 1 | (i & 1) << s;
+            const Int t(ksm(G, (mod1 - 1) / lim, mod1), ksm(G, (mod2 - 1) / lim, mod2), ksm(G, (mod3 - 1) / lim, mod3));
+            Wn[0] = Int(1);
+            for (auto it = Wn.begin(); it != Wn.begin() + lim; ++it) {
+                *(it + 1) = *it * t;
+            }
+            for (register tp i = 1; i < lim; ++i) if (i < rev[i]) swap(x[i], x[rev[i]]);
+            for (register tp mid = 1; mid < lim; mid <<= 1) {
+                const tp t = lim / mid >> 1;
+                for (register tp i = 0; i < lim; i += mid << 1) {
+                    for (register tp j = 0; j < mid; ++j) {
+                        const Int W = op ? Wn[t * j] : Wn[lim - t * j];
+                        const Int X = x[i + j], Y = x[i + j + mid] * W;
+                        x[i + j] = X + Y, x[i + j + mid] = X - Y;
+                    }
+                }
+            }
+            if (!op) {
+                const Int ilim(inv(lim, mod1), inv(lim, mod2), inv(lim, mod3));
+                for (register int i = 0; i < lim; ++i) x[i] = x[i] * ilim;
+            }
+        }
+
+    };
+
+    //以上为任意模数部分
 
     struct poly {
         vector<tp>x;
@@ -37,14 +117,16 @@ namespace polynomial {
             }
         }
 
+        //任意模数转换用
+        poly(poly_Int& a);
+
         inline int size() const {
             return x.size();
         }
 
-
-
-        inline void resize(const int& sz) {
+        inline poly& resize(const int& sz) {
             x.resize(sz);
+            return *this;
         }
 
         inline poly operator-() const {
@@ -64,11 +146,19 @@ namespace polynomial {
             for (tp i = 0; i < b.size(); i++) {
                 (result[i] += b.x[i]) %= mod;
             }
+            if (a.size() == b.size()) {
+                for (sz = a.size(); sz > 0; sz--) {
+                    if (result[sz - 1]) {
+                        break;
+                    }
+                }
+                result.resize(sz);
+            }
             return move(result);
         }
 
         inline poly& operator+=(const poly& other) {
-            (*this) = (*this) * other;
+            (*this) = (*this) + other;
             return *this;
         }
 
@@ -84,17 +174,32 @@ namespace polynomial {
         friend inline poly operator*(poly a, poly b) {
             tp sz = a.size() + b.size() - 1;
             tp tmp = max((tp)1, sz);
-            tp lim = 1;
+            tp lim = 2;
             while (lim < tmp) lim <<= 1;
-            a.resize(lim);
-            b.resize(lim);
-            poly result(lim);
-            ntt(a, lim, 1);
-            ntt(b, lim, 1);
-            for (tp i = 0; i < lim; ++i) result[i] = 1ll * a[i] * b[i] % mod;
-            ntt(result, lim, 0);
-            result.resize(sz);
-            return result;
+            if (mod == 998244353ll) {
+                a.resize(lim);
+                b.resize(lim);
+                poly result(lim);
+                ntt(a, lim, 1);
+                ntt(b, lim, 1);
+                for (tp i = 0; i < lim; ++i) result[i] = 1ll * a[i] * b[i] % mod;
+                ntt(result, lim, 0);
+                result.resize(sz);
+                return move(result);
+            }
+            else {
+                poly_Int Inta(a), Intb(b);
+                Inta.resize(lim);
+                Intb.resize(lim);
+                poly_Int Intresult(lim);
+                ntt(Inta, lim, 1);
+                ntt(Intb, lim, 1);
+                for (tp i = 0; i < lim; ++i)Intresult[i] = Inta[i] * Intb[i];
+                ntt(Intresult, lim, 0);
+                Intresult.resize(sz);
+                poly result(Intresult);
+                return move(result);
+            }
         }
 
         inline poly& operator*=(const poly& other) {
@@ -102,60 +207,174 @@ namespace polynomial {
             return *this;
         }
 
-        poly inv() {
-            tp k = this->size();
+        friend inline poly operator/(poly a, poly b) {
+            if (a.size() < b.size()) {
+                return poly(1);
+            }
+            reverse(a.x.begin(), a.x.end());
+            reverse(b.x.begin(), b.x.end());
+            poly c = a * b.inv(a.size() - b.size() + 1);
+            c.resize(a.size() - b.size() + 1);
+            reverse(c.x.begin(), c.x.end());
+            return move(c);
+        }
+
+        inline poly& operator/=(const poly& other) {
+            (*this) = (*this) / other;
+            return *this;
+        }
+
+        friend inline poly operator%(poly a, poly b) {
+            if (a.size() < b.size()) {
+                return move(a);
+            }
+            poly r = a - (a / b) * b;
+            return move(r);
+        }
+
+        inline poly& operator%=(const poly& other) {
+            (*this) = (*this) % other;
+            return *this;
+        }
+
+        friend void ntt(poly& x, tp lim, tp opt) {
+            tp k, gn, g, tmp;
+            vector<tp>r(lim);
+            for (tp i = 0; i < lim; ++i) {
+                r[i] = (i & 1) * (lim >> 1) + (r[i >> 1] >> 1);
+            }
+            for (tp i = 0; i < lim; ++i)
+                if (r[i] < i) swap(x[i], x[r[i]]);
+            for (tp m = 2; m <= lim; m <<= 1) {
+                k = m >> 1;
+                gn = ksm(3, (mod - 1) / m, mod);
+                for (tp i = 0; i < lim; i += m) {
+                    g = 1;
+                    for (tp j = 0; j < k; ++j, g = 1ll * g * gn % mod) {
+                        tmp = 1ll * x[i + j + k] * g % mod;
+                        x[i + j + k] = (x[i + j] - tmp + mod) % mod;
+                        x[i + j] = (x[i + j] + tmp) % mod;
+                    }
+                }
+            }
+            if (!opt) {
+                reverse(x.x.begin() + 1, x.x.begin() + lim);
+                int inv = ksm(lim, mod - 2, mod);
+                for (tp i = 0; i < lim; ++i) x[i] = 1ll * x[i] * inv % mod;
+            }
+        }
+
+        poly inv(int n = 0) {//n代表模x的n次意义下
+            if (n == 0) {
+                n = this->size();
+            }
             poly ret(vector<ll>(1, ksm((*this)[0], mod - 2, mod)));
-            for (tp i = 1; i < k; i <<= 1) {
+            for (tp i = 1; i < n; i <<= 1) {
                 ret *= (poly(vector<tp>(1, 2)) - poly(*this, i << 1) * ret);
                 ret.resize(i << 1);
             }
-            ret.resize(k);
+            ret.resize(n);
             return ret;
+        }
+
+        poly sqrt(int n = 0) {//n代表模x的n次意义下
+            if (n == 0) {
+                n = this->size();
+            }
+            if (n == 1) {
+                return move(poly(vector<tp>(1, 1)));
+            }
+            poly f = sqrt((n + 1) >> 1);
+            f += (f.inv(n) * poly(*this, n)).resize(n);
+            tp inv2 = polynomial::inv(2, mod);
+            for (tp i = 0; i < f.size(); i++) {
+                (f[i] *= inv2) %= mod;
+            }
+            return move(f);
+
+        }
+
+        poly deriv() {
+            poly ret(this->size() - 1);
+            for (tp i = 0; i < ret.size(); i++) {
+                ret[i] = (*this)[i + 1] * (i + 1) % mod;
+            }
+            return move(ret);
+        }
+
+        poly integ() {
+            poly ret(this->size() + 1);
+            for (tp i = 1; i < ret.size(); i++) {
+                ret[i] = (*this)[i - 1] * polynomial::inv(i, mod) % mod;
+            }
+            return move(ret);
+        }
+
+        poly ln(int n = 0) {//要求a0==1
+            if (n == 0) {
+                n = this->size();
+            }
+            return (((deriv() * inv(n)).resize(n)).integ()).resize(n);
+        }
+
+        poly exp(int n = 0) {
+            if (n == 0) {
+                n = this->size();
+            }
+            poly one(vector<tp>(1, 1));
+            poly ret = one;
+            for (tp i = 1; i < n; i <<= 1) {
+                (ret *= (one + poly(*this, i << 1) - ret.ln(i << 1))).resize(i << 1);
+            }
+            ret.resize(n);
+            return move(ret);
         }
 
     };
 
-    void ntt_init(int n) {//处理的最大项数
-        n = max(1, n);
-        tp lim = 1;
-        tp cnt = 0;
-        while (lim < n) lim <<= 1, cnt++;
-        r.resize(cnt + 1);
-        lim = 1;
-        cnt = 0;
-        while (lim < n) {
-            lim <<= 1;
-            cnt++;
-            lim_mp[lim] = cnt;
-            r[cnt].resize(lim);
-            for (tp i = 0; i < lim; ++i) {
-                r[cnt][i] = (i & 1) * (lim >> 1) + (r[cnt][i >> 1] >> 1);
-            }
+    //以下为任意模数部分
+    poly::poly(poly_Int& a) {
+        x.resize(a.size());
+        for (tp i = 0; i < x.size(); ++i) {
+            x[i] = a[i].get();
         }
     }
 
-    void ntt(poly& x, tp lim, tp opt) {
-        tp k, gn, g, tmp;
-        tp cnt = lim_mp[lim];
-        for (tp i = 0; i < lim; ++i)
-            if (r[cnt][i] < i) swap(x[i], x[r[cnt][i]]);
-        for (tp m = 2; m <= lim; m <<= 1) {
-            k = m >> 1;
-            gn = ksm(3, (mod - 1) / m, mod);
-            for (tp i = 0; i < lim; i += m) {
-                g = 1;
-                for (tp j = 0; j < k; ++j, g = 1ll * g * gn % mod) {
-                    tmp = 1ll * x[i + j + k] * g % mod;
-                    x[i + j + k] = (x[i + j] - tmp + mod) % mod;
-                    x[i + j] = (x[i + j] + tmp) % mod;
-                }
+    poly_Int::poly_Int(const poly& a) {
+        x.resize(a.size());
+        for (tp i = 0; i < x.size(); ++i) {
+            x[i] = (Int)a.x[i];
+        }
+    }
+    //以上为任意模数部分
+
+    //启发式连乘
+    poly dsu_mul(vector<poly>& v, tp s, tp t) {
+        if (s == t) {
+            return v[s];
+        }
+        tp m = s + ((t - s) >> 1);
+        return dsu_mul(v, s, m) * dsu_mul(v, m + 1, t);
+    }
+
+    //特殊快速幂，复杂度o(nk),k为a的项数
+    poly special_ksm(poly a, tp b) {//b为幂次
+        vector<tp>inv((a.size() - 1) * b + 1);
+        poly ans(inv);
+        inv[1] = 1;
+        for (tp i = 2; i < inv.size(); ++i) {
+            inv[i] = (mod - mod / i) * inv[mod % i] % mod;
+        }
+        tp inv_a0 = polynomial::inv(a[0], mod);
+        ans[0] = ksm(a[0], b, mod);
+        for (tp k = 1; k < ans.size(); ++k) {
+            tp n = min(k, (tp)a.size() - 1);
+            for (tp i = 1; i <= n; ++i) {
+                ans[k] = (ans[k] + a[i] * ans[k - i] % mod * (((b + 1) * i - k + mod) % mod) % mod) % mod;
             }
+            ans[k] = ans[k] * inv[k] % mod * inv_a0 % mod;
         }
-        if (opt == 0) {
-            reverse(x.x.begin() + 1, x.x.begin() + lim);
-            int inv = ksm(lim, mod - 2, mod);
-            for (tp i = 0; i < lim; ++i) x[i] = 1ll * x[i] * inv % mod;
-        }
+        return move(ans);
     }
 
 }
