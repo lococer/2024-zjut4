@@ -148,5 +148,37 @@ namespace my_math {
         }
     }
 
-}
+    tp euler_phi(tp n) {
+        tp ans = n;
+        for (tp i = 2; i * i <= n; i++) {
+            if (n % i == 0) {
+                ans = ans / i * (i - 1);
+                while (n % i == 0) n /= i;
+            }
+        }
+        if (n > 1) ans = ans / n * (n - 1);
+        return ans;
+    }
 
+    tp get_g(tp n) {
+        tp g = 0;
+        tp phi = euler_phi(n);
+        set<tp>s;
+        find_prime_factor(s, phi);
+        for (tp i = 1;; i++) {
+            bool flag = 1;
+            if (__gcd(i, n) != 1)continue;
+            for (auto& j : s) {
+                if (ksm(i, phi / j, n) == 1) {
+                    flag = 0;
+                    break;
+                }
+            }
+            if (flag) {
+                g = i;
+                break;
+            }
+        }
+        return g;
+    }
+}
