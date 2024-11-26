@@ -286,6 +286,19 @@ poly operator*(poly a,poly b){
     // for(int i=0;i<cl;i++)a.x[i]=A[i].CRT(POLY::p);
     // return move(a);
 }
+poly operator*=(poly &a,poly b){
+    //单模
+    ll al=a.x.size(),bl=b.x.size(),cl=al+bl-1;
+    int s=0;
+    while((1<<s)<cl)s++;
+    a.x.resize(1<<s,0),b.x.resize(1<<s,0);
+    POLY::ntt(a.x,s,0);
+    POLY::ntt(b.x,s,0);
+    for(int i=0;i<(1<<s);i++)a.x[i]=a.x[i]*b.x[i]%POLY::p;
+    POLY::ntt(a.x,s,1);
+    a.x.resize(cl);
+    return a;
+}
 poly operator-(const poly &a,const poly &b){
     ll al=a.x.size(),bl=b.x.size(),cl=max(al,bl);
     poly c=poly(vector<ll>(cl));
@@ -359,12 +372,11 @@ signed main()
     // freopen("aa.out", "w", stdout);
     int n,m;
     cin>>n>>m;
-    ++n;
     poly x,y;
-    x.x.resize(n);y.x.resize(m);
-    for(int i=0;i<n;++i) cin>>x[i];
-    for(int i=0;i<m;++i) cin>>y[i];
-    auto res=POLY::Multipoints(x,y,max(n,m));
-    for(int i=0;i<m;++i) cout<<res[i]<<"\n";
+    x.x.resize(n+1);y.x.resize(m+1);
+    for(int i=0;i<=n;++i) cin>>x[i];
+    for(int i=0;i<=m;++i) cin>>y[i];
+    x*=y;
+    for(int i=0;i<=n+m;++i) cout<<x[i]<<"\n";
     return 0;
 }
