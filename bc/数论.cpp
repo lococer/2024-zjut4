@@ -19,7 +19,7 @@ namespace my_math {
 
     tp ksm(tp a, tp b, tp p) {
         tp lsans = 1;
-        while (b) {
+        while (b) { 
             if (b & 1ll) {
                 lsans = ((__int128)lsans * a) % p;
             }
